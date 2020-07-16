@@ -119,8 +119,12 @@ final public class JsonNoteWriter {
 
       final Map<IdentifiedAnnotation, Collection<Integer>> corefs
             = EssentialAnnotationUtil.createMarkableCorefs( jCas );
+//      final Collection<IdentifiedAnnotation> requiredAnnotations
+//            = EssentialAnnotationUtil.getRequiredAnnotations( jCas, corefs );
       final Collection<IdentifiedAnnotation> requiredAnnotations
-            = EssentialAnnotationUtil.getRequiredAnnotations( jCas, corefs );
+            = EssentialAnnotationUtil.getRequiredAnnotations( jCas, corefs ).stream()
+                                     .filter( a -> !Neo4jOntologyConceptUtil.getUri( a ).isEmpty() )
+                                     .collect( Collectors.toList() );
 
       final Map<IdentifiedAnnotation, Mention> mentionMap = createMentionMap( requiredAnnotations );
 
@@ -256,6 +260,7 @@ final public class JsonNoteWriter {
                                                             final Collection<BinaryTextRelation> relations ) {
       return relations.stream()
                       .map( r -> createMentionRelation( r, mentionMap ) )
+                      .filter( Objects::nonNull )
                       .sorted( RELATION_COMPARATOR )
                       .collect( Collectors.toList() );
    }
@@ -307,6 +312,7 @@ final public class JsonNoteWriter {
       final List<MentionCoref> corefList
             = corefChains.stream()
                          .map( c -> createMentionCoref( c, mentionMap ) )
+                         .filter( Objects::nonNull )
                          .sorted( COREF_COMPARATOR )
                          .collect( Collectors.toList() );
       int id = 1;
@@ -320,13 +326,17 @@ final public class JsonNoteWriter {
 
    static private MentionCoref createMentionCoref( final List<IdentifiedAnnotation> chain,
                                                    final Map<IdentifiedAnnotation, Mention> mentionMap ) {
+      final String[] idChain = chain.stream()
+                                    .sorted( Comparator.comparingInt( Annotation::getBegin ) )
+                                    .map( mentionMap::get )
+                                    .filter( Objects::nonNull )
+                                    .map( Mention::getId )
+                                    .toArray( String[]::new );
+      if ( idChain.length <= 1 ) {
+         return null;
+      }
       final MentionCoref coref = new MentionCoref();
-      coref.setIdChain( chain.stream()
-                             .sorted( Comparator.comparingInt( Annotation::getBegin ) )
-                             .map( mentionMap::get )
-                             .filter( Objects::nonNull )
-                             .map( Mention::getId )
-                             .toArray( String[]::new ) );
+      coref.setIdChain( idChain );
       return coref;
    }
 

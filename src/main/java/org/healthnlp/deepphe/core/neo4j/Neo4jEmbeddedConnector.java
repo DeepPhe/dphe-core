@@ -3,7 +3,9 @@ package org.healthnlp.deepphe.core.neo4j;
 
 import org.apache.log4j.Logger;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.factory.GraphDatabaseBuilder;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.kernel.impl.store.kvstore.RotationTimeoutException;
 import org.neo4j.kernel.lifecycle.LifecycleException;
 
@@ -45,8 +47,12 @@ public enum Neo4jEmbeddedConnector {
          LOGGER.error( "No Database exists at: " + graphDbPath );
          System.exit( -1 );
       }
+//      _graphDb = new GraphDatabaseFactory()
+//            .newEmbeddedDatabase( graphDbFile );
       _graphDb = new GraphDatabaseFactory()
-            .newEmbeddedDatabase( graphDbFile );
+            .newEmbeddedDatabaseBuilder( graphDbFile )
+            .setConfig( GraphDatabaseSettings.read_only, "true" )
+            .newGraphDatabase();
       if ( !_graphDb.isAvailable( 500 ) ) {
          LOGGER.error( "Could not initialize neo4j connection for: " + graphDbPath );
          System.exit( -1 );

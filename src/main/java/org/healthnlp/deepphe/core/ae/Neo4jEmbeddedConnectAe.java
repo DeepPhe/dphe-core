@@ -28,26 +28,6 @@ final public class Neo4jEmbeddedConnectAe extends JCasAnnotator_ImplBase {
 
    static private final Logger LOGGER = Logger.getLogger( "Neo4jEmbeddedConnectAe" );
 
-   public static final String PARAMETER_NEO4J_URI = "Neo4jUri";
-   public static final String PARAMETER_NEO4J_USER = "Neo4jUser";
-   public static final String PARAMETER_NEO4J_PASS = "Neo4jPass";
-   @ConfigurationParameter(
-         name = PARAMETER_NEO4J_URI,
-         description = "The URI to the neo4j server."
-   )
-   private String _neo4jUri;
-
-   @ConfigurationParameter(
-         name = PARAMETER_NEO4J_USER,
-         description = "The User name for the neo4j server."
-   )
-   private String _neo4jUser;
-
-   @ConfigurationParameter(
-         name = PARAMETER_NEO4J_PASS,
-         description = "The User password for the neo4j server."
-   )
-   private String _neo4jPass;
 
    /**
     * {@inheritDoc}
@@ -57,8 +37,8 @@ final public class Neo4jEmbeddedConnectAe extends JCasAnnotator_ImplBase {
       super.initialize( context );
       LOGGER.info( "Loading Graph ..." );
       try ( DotLogger dotLogger = new DotLogger() ) {
-            Neo4jServerConnector.getInstance()
-                                .createDriver( _neo4jUri, _neo4jUser, _neo4jPass );
+            Neo4jEmbeddedConnector.getInstance()
+                                .connectToGraph();
       } catch ( IOException ioE ) {
          // Do nothing
       }

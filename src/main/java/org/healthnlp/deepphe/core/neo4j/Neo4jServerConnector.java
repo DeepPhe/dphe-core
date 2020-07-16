@@ -32,6 +32,9 @@ public enum Neo4jServerConnector {
       if ( _driver != null ) {
          return _driver;
       }
+      if ( url.equals( "Local" ) && user.equals( "Me" ) && pass.equals( "None" ) ) {
+         return null;
+      }
       _driver = GraphDatabase.driver( url, AuthTokens.basic( user, pass ) );
 
       registerShutdownHook( _driver );
