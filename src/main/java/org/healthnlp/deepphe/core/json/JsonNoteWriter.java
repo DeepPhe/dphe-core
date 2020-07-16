@@ -79,13 +79,13 @@ final public class JsonNoteWriter {
       final Patient patient = new Patient();
       patient.setId( patientId );
       patient.setNotes( Collections.singletonList( note ) );
-      final Gson gson = new GsonBuilder().create();
+      final Gson gson = new GsonBuilder().setPrettyPrinting().create();
       return gson.toJson( patient );
    }
 
    static public String createNoteJson( final JCas jCas ) {
       final Note note = createNote( jCas );
-      final Gson gson = new GsonBuilder().create();
+      final Gson gson = new GsonBuilder().setPrettyPrinting().create();
       return gson.toJson( note );
    }
 
