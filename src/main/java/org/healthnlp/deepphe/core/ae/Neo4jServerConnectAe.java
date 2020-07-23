@@ -8,8 +8,7 @@ import org.apache.uima.fit.component.JCasAnnotator_ImplBase;
 import org.apache.uima.fit.descriptor.ConfigurationParameter;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
-import org.healthnlp.deepphe.core.neo4j.Neo4jServerConnector;
-import org.neo4j.driver.v1.Driver;
+import org.healthnlp.deepphe.core.neo4j.Neo4jDriverConnection;
 
 /**
  * @author SPF , chip-nlp
@@ -69,7 +68,7 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
             _neo4jPass = "None";
          }
 
-         Neo4jServerConnector.getInstance().createDriver( _neo4jUri, _neo4jUser, _neo4jPass );
+         Neo4jDriverConnection.getInstance().createDriver( _neo4jUri, _neo4jUser, _neo4jPass );
       } catch ( Exception e ) {
          throw new ResourceInitializationException( e );
       }

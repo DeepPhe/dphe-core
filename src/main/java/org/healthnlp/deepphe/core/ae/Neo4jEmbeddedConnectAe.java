@@ -6,11 +6,9 @@ import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.fit.component.JCasAnnotator_ImplBase;
-import org.apache.uima.fit.descriptor.ConfigurationParameter;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
-import org.healthnlp.deepphe.core.neo4j.Neo4jEmbeddedConnector;
-import org.healthnlp.deepphe.core.neo4j.Neo4jServerConnector;
+import org.healthnlp.deepphe.core.neo4j.Neo4jEmbeddedConnection;
 
 import java.io.IOException;
 
@@ -37,8 +35,8 @@ final public class Neo4jEmbeddedConnectAe extends JCasAnnotator_ImplBase {
       super.initialize( context );
       LOGGER.info( "Loading Graph ..." );
       try ( DotLogger dotLogger = new DotLogger() ) {
-            Neo4jEmbeddedConnector.getInstance()
-                                .connectToGraph();
+            Neo4jEmbeddedConnection.getInstance()
+                                   .connectToGraph();
       } catch ( IOException ioE ) {
          // Do nothing
       }

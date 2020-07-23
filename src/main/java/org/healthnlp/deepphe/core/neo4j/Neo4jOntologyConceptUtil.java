@@ -81,8 +81,8 @@ final public class Neo4jOntologyConceptUtil {
    }
 
    static public String getCui( final String uri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       try ( Transaction tx = graphDb.beginTx() ) {
          final Node graphNode = SearchUtil.getClassNode( graphDb, uri );
          if ( graphNode == null ) {
@@ -103,8 +103,8 @@ final public class Neo4jOntologyConceptUtil {
 
 
    static public Collection<String> getIcdoCodes( final String uri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       try ( Transaction tx = graphDb.beginTx() ) {
          final Node rootBase = SearchUtil.getClassNode( graphDb, uri );
          if ( rootBase == null ) {
@@ -208,8 +208,8 @@ final public class Neo4jOntologyConceptUtil {
    }
 
    static public Collection<String> getTuis( final String uri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       try ( Transaction tx = graphDb.beginTx() ) {
          final Node rootBase = SearchUtil.getClassNode( graphDb, uri );
          if ( rootBase == null ) {
@@ -262,8 +262,8 @@ final public class Neo4jOntologyConceptUtil {
          return "Event";
       }
       String prefText = toPreferredText( uri );
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       try ( Transaction tx = graphDb.beginTx() ) {
          final Node graphNode = SearchUtil.getClassNode( graphDb, uri );
          if ( graphNode == null ) {
@@ -301,7 +301,7 @@ final public class Neo4jOntologyConceptUtil {
     * @return neo4j Classes for the given URI.  Classes are mention types, not mentions discovered in text.
     */
    static public Node getClassNode( final String dPheUri ) {
-      return SearchUtil.getClassNode( Neo4jEmbeddedConnector.getInstance().getGraph(), dPheUri );
+      return SearchUtil.getClassNode( Neo4jEmbeddedConnection.getInstance().getGraph(), dPheUri );
    }
 
    static public Map<String, Collection<IdentifiedAnnotation>> mapUriAnnotations( final Collection<IdentifiedAnnotation> annotations ) {
@@ -394,7 +394,7 @@ final public class Neo4jOntologyConceptUtil {
     */
    static public Map<String, Collection<IdentifiedAnnotation>> getUriAnnotationsByUriBranch( final JCas jcas,
                                                                                              final String rootUri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance().getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance().getGraph();
       final Collection<String> branchUris = SearchUtil.getBranchUris( graphDb, rootUri );
       final Collection<IdentifiedAnnotation> allAnnotations = JCasUtil.select( jcas, IdentifiedAnnotation.class );
       return getUriAnnotationsByUris( allAnnotations, branchUris );
@@ -410,7 +410,7 @@ final public class Neo4jOntologyConceptUtil {
    static public <T extends Annotation> Map<String, Collection<IdentifiedAnnotation>> getUriAnnotationsByUriBranch( final JCas jcas,
                                                                                                                     final T lookupWindow,
                                                                                                                     final String rootUri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance().getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance().getGraph();
       final Collection<String> branchUris = SearchUtil.getBranchUris( graphDb, rootUri );
       final Collection<IdentifiedAnnotation> windowAnnotations = JCasUtil.selectCovered( jcas,
                                                                                          IdentifiedAnnotation.class,
@@ -460,14 +460,14 @@ final public class Neo4jOntologyConceptUtil {
 
 
    static public Collection<String> getBranchUris( final String rootUri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       return SearchUtil.getBranchUris( graphDb, rootUri );
    }
 
    static public Collection<String> getRootUris( final String leafUri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       return SearchUtil.getRootUris( graphDb, leafUri );
    }
 
@@ -475,16 +475,16 @@ final public class Neo4jOntologyConceptUtil {
    static public Collection<String> getBranchUrisWithRelation( final String rootUri,
                                                                final String relationName,
                                                                final String targetUri ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       return SearchUtil.getBranchUrisWithRelation( graphDb, rootUri, relationName, targetUri );
    }
 
    static public Collection<String> getBranchUrisWithAttribute( final String rootUri,
                                                                 final String attributeName,
                                                                 final String value ) {
-      final GraphDatabaseService graphDb = Neo4jEmbeddedConnector.getInstance()
-                                                                 .getGraph();
+      final GraphDatabaseService graphDb = Neo4jEmbeddedConnection.getInstance()
+                                                                  .getGraph();
       return SearchUtil.getBranchUrisWithAttribute( graphDb, rootUri, attributeName, value );
    }
 
