@@ -8,7 +8,7 @@ import org.apache.uima.fit.component.JCasAnnotator_ImplBase;
 import org.apache.uima.fit.descriptor.ConfigurationParameter;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
-import org.healthnlp.deepphe.core.neo4j.Neo4jDriverConnection;
+import org.healthnlp.deepphe.neo4j.driver.DriverConnection;
 
 /**
  * @author SPF , chip-nlp
@@ -57,6 +57,9 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
       // The super.initialize call will automatically assign user-specified values for to ConfigurationParameters.
       super.initialize( uimaContext );
 
+      if ( DriverConnection.getInstance().getDriver() != null ) {
+         return;
+      }
       try {
          if ( _neo4jUri == null || _neo4jUri.isEmpty() ) {
             _neo4jUri = "Local";
@@ -68,7 +71,7 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
             _neo4jPass = "None";
          }
 
-         Neo4jDriverConnection.getInstance().createDriver( _neo4jUri, _neo4jUser, _neo4jPass );
+         DriverConnection.getInstance().createDriver( _neo4jUri, _neo4jUser, _neo4jPass );
       } catch ( Exception e ) {
          throw new ResourceInitializationException( e );
       }
