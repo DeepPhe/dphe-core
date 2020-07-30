@@ -23,12 +23,6 @@
       </dependency>
 
       <dependency>
-         <groupId>org.healthnlp</groupId>
-         <artifactId>deepphe-onto-db</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
          <groupId>org.apache.ctakes</groupId>
          <artifactId>ctakes-utils</artifactId>
          <version>${ctakes.version}</version>
