@@ -24,6 +24,15 @@ final public class UriUtil {
    private UriUtil() {
    }
 
+   static public Map<String, Collection<String>> mapUriRoots( final Collection<String> uris ) {
+      final Map<String,Collection<String>> uriRootsMap = new HashMap<>();
+      for ( String uri : new HashSet<>( uris ) ) {
+         uriRootsMap.put( uri, Neo4jOntologyConceptUtil.getRootUris( uri ) );
+      }
+      return uriRootsMap;
+   }
+
+
    static public boolean containsUri( final String uri, Collection<String> toMatch ) {
       return toMatch.contains( uri );
    }
@@ -164,6 +173,10 @@ final public class UriUtil {
       }
       // put modifiers back in
       modifierUris.forEach( u -> uriBestRootMap.put( u, u ) );
+
+      LOGGER.info( "Best root for each uri: " );
+      uriBestRootMap.forEach( (k,v) -> LOGGER.info( k + " : " + v ) );
+
       return uriBestRootMap;
    }
 
@@ -326,11 +339,28 @@ final public class UriUtil {
     * @return a uri that is the most "specific"
     */
    static public String getMostSpecificUri( final Collection<String> allUris ) {
+      if ( allUris.isEmpty() ) {
+         return "";
+      }
       if ( allUris.size() == 1 ) {
          return new ArrayList<>( allUris ).get( 0 );
       }
-      final Map<String, Collection<String>> rootMap
+      final Map<Integer,List<String>> levelMap
             = allUris.stream()
+                     .collect( Collectors.groupingBy( Neo4jOntologyConceptUtil::getClassLevel ) );
+      final Integer highest = levelMap.keySet()
+                                     .stream()
+                                     .max( Comparator.comparingInt( l -> l ) )
+                                     .orElse( -1 );
+      final List<String> highestUris = highest > 0 ? levelMap.get( highest ) : new ArrayList<>( allUris );
+      if ( highestUris.size() == 1 ) {
+         LOGGER.info( "Highest Level URI " + highestUris.get( 0 ) + " " + highest +  " of " + String.join( ",", allUris ) );
+         return highestUris.get( 0 );
+      }
+
+      final Map<String, Collection<String>> rootMap
+//            = allUris.stream()
+            = highestUris.stream()
                      .distinct()
                      .collect( Collectors.toMap( Function.identity(), Neo4jOntologyConceptUtil::getRootUris ) );
       String firstUri = "";
@@ -338,7 +368,8 @@ final public class UriUtil {
       String bestCountUri = "";
       String bestLengthUri = "";
       int bestCount = 0;
-      for ( String uri : allUris ) {
+//      for ( String uri : allUris ) {
+      for ( String uri : highestUris ) {
          int count = rootMap.get( uri ).size();
          if ( bestCloseUri.isEmpty() ) {
             firstUri = uri;
@@ -362,29 +393,53 @@ final public class UriUtil {
          }
       }
       if ( !firstUri.equals( bestCloseUri ) ) {
+         LOGGER.info( "Highest Level Best Close URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
          return bestCloseUri;
       } else if ( !firstUri.equals( bestCountUri ) ) {
+         LOGGER.info( "Highest Level Best Count URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
          return bestCountUri;
       }
+      LOGGER.info( "Highest Level Best Length URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
       return bestLengthUri;
    }
 
 
    static public String getShortestRootUri( final Collection<String> allUris ) {
+      if ( allUris.isEmpty() ) {
+         return "";
+      }
+      if ( allUris.size() == 1 ) {
+         return new ArrayList<>( allUris ).get( 0 );
+      }
+      final Map<Integer,List<String>> levelMap
+            = allUris.stream()
+                     .collect( Collectors.groupingBy( Neo4jOntologyConceptUtil::getClassLevel ) );
+      final Integer lowest = levelMap.keySet()
+                                     .stream()
+                                     .min( Comparator.comparingInt( l -> l ) )
+                                     .orElse( -1 );
+      final List<String> lowestUris = lowest > 0 ? levelMap.get( lowest ) : new ArrayList<>( allUris );
+      if ( lowestUris.size() == 1 ) {
+         LOGGER.info( "Lowest Level URI " + lowestUris.get( 0 ) + " " + lowest + " of " + String.join( ",", allUris ) );
+         return lowestUris.get( 0 );
+      }
+
       long leastLength = Integer.MAX_VALUE;
       String bestUri = "";
-      for ( String uri : allUris ) {
+//      for ( String uri : allUris ) {
+      for ( String uri : lowestUris ) {
          long length = Neo4jOntologyConceptUtil.getRootUris( uri ).size();
          if ( length < leastLength ) {
             leastLength = length;
             bestUri = uri;
          }
       }
+      LOGGER.info( "Lowest Level URI " + bestUri + " from " + String.join( ",", lowestUris ) + " " + lowest + " of " + String.join( ",", allUris ) );
       return bestUri;
    }
 
 
-   private static Map<String, String> HARDCODED_CLOSE_ENOUGH = new HashMap<>();
+   static private final Map<String, String> HARDCODED_CLOSE_ENOUGH = new HashMap<>();
 
    static {
       // Synonyms hard coded for now until get more generalized solution using

@@ -258,6 +258,44 @@ final public class Neo4jOntologyConceptUtil {
       return Arrays.asList( StringUtil.fastSplit( tuiSet, '|' ) );
    }
 
+   static public int getClassLevel( final String uri ) {
+      if ( uri.equals( UriConstants.EVENT ) ) {
+         return -1;
+      }
+      final GraphDatabaseService graphDb = EmbeddedConnection.getInstance()
+                                                             .getGraph();
+      int classLevel = -1;
+      try ( Transaction tx = graphDb.beginTx() ) {
+         final Node graphNode = SearchUtil.getClassNode( graphDb, uri );
+         if ( graphNode == null ) {
+            LOGGER.debug( "getClassLevel(..) : No Class exists for URI " + uri );
+            tx.success();
+            return -1;
+         }
+         final Object property = graphNode.getProperty( LEVEL_KEY );
+         if ( property == null ) {
+            LOGGER.debug( "No Class Level for URI " + uri );
+         } else {
+            classLevel = getLevel( property );
+         }
+         tx.success();
+      } catch ( MultipleFoundException mfE ) {
+         LOGGER.error( uri + " : " + mfE.getMessage(), mfE );
+      }
+      return classLevel;
+   }
+
+   static private int getLevel( final Object value ) {
+      if ( value instanceof Number ) {
+         return ((Number)value).intValue();
+      }
+      try {
+         return Integer.parseInt( value.toString() );
+      } catch ( NumberFormatException nfE ) {
+         return -1;
+      }
+   }
+
    static public String getPreferredText( final String uri ) {
       if ( uri.equals( UriConstants.EVENT ) ) {
          return "Event";
@@ -269,6 +307,7 @@ final public class Neo4jOntologyConceptUtil {
          final Node graphNode = SearchUtil.getClassNode( graphDb, uri );
          if ( graphNode == null ) {
             LOGGER.debug( "getPreferredText(..) : No Class exists for URI " + uri );
+            tx.success();
             return prefText;
          }
          final Object property = graphNode.getProperty( PREF_TEXT_KEY );
