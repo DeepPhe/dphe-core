@@ -20,7 +20,6 @@ jobs:
       with:
         java-version: 1.8
         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-        settings-path: ${{ github.workspace }} # location for the settings.xml file
         server-username: GITHUB_USER_REF  # env variable name for username
         server-password: GITHUB_TOKEN_REF # env variable name for GitHub Personal Access Token:  
 
@@ -28,7 +27,7 @@ jobs:
       run: mvn -B package --file pom.xml
 
     - name: Publish to GitHub Packages Apache Maven
-      run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
+      run: mvn -B -Pgithub package --file pom.xml
       env:
         GITHUB_USER_REF: ${{ secrets.DPHE_ROBOT_USERNAME }}
         GITHUB_TOKEN_REF: ${{ secrets.DPHE_ROBOT_ACCESS_TOKEN }}
