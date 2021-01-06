@@ -157,8 +157,7 @@
           <id>github</id>
           <name>Github Packages</name>
           <url>https://maven.pkg.github.com/DeepPhe/dphe-neo4j</url>
-        </repository>
-      </repositories>
+      </repository>
    </repositories>
 
    <build>
