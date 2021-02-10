@@ -148,6 +148,7 @@ final public class Neo4jOntologyConceptUtil {
                                  .filter( i -> i.startsWith( "C" ) )
                                  .filter( i -> !i.startsWith( "C80" ) )  // Unknown
                                  .filter( i -> !i.startsWith( "C76" ) )  // body region
+                                 .filter( i -> !i.startsWith( "C44" ) ) // skin
                                  .sorted()
                                  .collect( Collectors.toList() );
       if ( icdos.isEmpty() ) {
@@ -156,22 +157,12 @@ final public class Neo4jOntologyConceptUtil {
       if ( icdos.size() == 1 ) {
          return icdos.get( 0 );
       }
-      int firstNonSkin = 0;
-      for ( String icdo : icdos ) {
-         if ( !icdo.startsWith( "C44" ) ) {
-            break;
-         }
-         firstNonSkin++;
-      }
-      if ( firstNonSkin >= icdos.size() ) {
-         firstNonSkin = 0;
-      }
-      final String firstMajor = icdos.get( firstNonSkin );
+      final String firstMajor = icdos.get( 0 );
       if ( firstMajor.contains( "." ) ) {
          // Contains major site and minor site
          return firstMajor;
       }
-      final String withMinor = icdos.get( firstNonSkin+1 );
+      final String withMinor = icdos.get( 1 );
       if ( withMinor.startsWith( firstMajor ) ) {
          return withMinor;
       }

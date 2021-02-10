@@ -174,8 +174,8 @@ final public class UriUtil {
       // put modifiers back in
       modifierUris.forEach( u -> uriBestRootMap.put( u, u ) );
 
-      LOGGER.info( "Best root for each uri: " );
-      uriBestRootMap.forEach( (k,v) -> LOGGER.info( k + " : " + v ) );
+//      LOGGER.info( "Best root for each uri: " );
+//      uriBestRootMap.forEach( (k,v) -> LOGGER.info( k + " : " + v ) );
 
       return uriBestRootMap;
    }
@@ -354,7 +354,7 @@ final public class UriUtil {
                                      .orElse( -1 );
       final List<String> highestUris = highest > 0 ? levelMap.get( highest ) : new ArrayList<>( allUris );
       if ( highestUris.size() == 1 ) {
-         LOGGER.info( "Highest Level URI " + highestUris.get( 0 ) + " " + highest +  " of " + String.join( ",", allUris ) );
+//         LOGGER.info( "Highest Level URI " + highestUris.get( 0 ) + " " + highest +  " of " + String.join( ",", allUris ) );
          return highestUris.get( 0 );
       }
 
@@ -393,13 +393,13 @@ final public class UriUtil {
          }
       }
       if ( !firstUri.equals( bestCloseUri ) ) {
-         LOGGER.info( "Highest Level Best Close URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
+//         LOGGER.info( "Highest Level Best Close URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
          return bestCloseUri;
       } else if ( !firstUri.equals( bestCountUri ) ) {
-         LOGGER.info( "Highest Level Best Count URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
+//         LOGGER.info( "Highest Level Best Count URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
          return bestCountUri;
       }
-      LOGGER.info( "Highest Level Best Length URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
+//      LOGGER.info( "Highest Level Best Length URI " + bestCloseUri + " from " + String.join( ",", highestUris ) + " " + highest + " of " + String.join( ",", allUris ) );
       return bestLengthUri;
    }
 
@@ -420,7 +420,7 @@ final public class UriUtil {
                                      .orElse( -1 );
       final List<String> lowestUris = lowest > 0 ? levelMap.get( lowest ) : new ArrayList<>( allUris );
       if ( lowestUris.size() == 1 ) {
-         LOGGER.info( "Lowest Level URI " + lowestUris.get( 0 ) + " " + lowest + " of " + String.join( ",", allUris ) );
+//         LOGGER.info( "Lowest Level URI " + lowestUris.get( 0 ) + " " + lowest + " of " + String.join( ",", allUris ) );
          return lowestUris.get( 0 );
       }
 
@@ -434,7 +434,7 @@ final public class UriUtil {
             bestUri = uri;
          }
       }
-      LOGGER.info( "Lowest Level URI " + bestUri + " from " + String.join( ",", lowestUris ) + " " + lowest + " of " + String.join( ",", allUris ) );
+//      LOGGER.info( "Lowest Level URI " + bestUri + " from " + String.join( ",", lowestUris ) + " " + lowest + " of " + String.join( ",", allUris ) );
       return bestUri;
    }
 
