@@ -84,7 +84,7 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
          if ( _neo4jPass == null || _neo4jPass.isEmpty() ) {
             _neo4jPass = "None";
          }
-
+         LOGGER.info( "Neo4j Driver Connecting to " + _neo4jUri + " as " + _neo4jUser );
          DriverConnection.getInstance().createDriver( _neo4jUri, _neo4jUser, _neo4jPass );
       } catch ( Exception e ) {
          throw new ResourceInitializationException( e );
