@@ -10,6 +10,8 @@ import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.healthnlp.deepphe.neo4j.driver.DriverConnection;
 
+import java.io.*;
+
 /**
  * @author SPF , chip-nlp
  * @version %I%
@@ -17,13 +19,22 @@ import org.healthnlp.deepphe.neo4j.driver.DriverConnection;
  */
 @PipeBitInfo(
       name = "Neo4jServerConnectAe",
-      description = "For deepphe.", role = PipeBitInfo.Role.SPECIAL
+      description = "Connects to an external neo4j Server.  Can also start neo4j Server.",
+      role = PipeBitInfo.Role.SPECIAL
 )
 final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
 
+   public static final String PARAMETER_NEO4J_START = "StartNeo4j";
    public static final String PARAMETER_NEO4J_URI = "Neo4jUri";
    public static final String PARAMETER_NEO4J_USER = "Neo4jUser";
    public static final String PARAMETER_NEO4J_PASS = "Neo4jPass";
+   @ConfigurationParameter(
+         name = PARAMETER_NEO4J_START,
+         description = "Start the neo4j server at the given location.",
+         mandatory = false
+   )
+   private String _startNeo4j;
+
    @ConfigurationParameter(
          name = PARAMETER_NEO4J_URI,
          description = "The URI to the neo4j server.",
@@ -57,6 +68,9 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
       // The super.initialize call will automatically assign user-specified values for to ConfigurationParameters.
       super.initialize( uimaContext );
 
+      if ( _startNeo4j != null && !_startNeo4j.isEmpty() ) {
+         startNeo4j();
+      }
       if ( DriverConnection.getInstance().getDriver() != null ) {
          return;
       }
@@ -83,6 +97,38 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
    @Override
    public void process( final JCas jCas ) throws AnalysisEngineProcessException {
       // Does nothing.
+   }
+
+
+   private void startNeo4j() throws ResourceInitializationException {
+      //         http://localhost:7474
+      //         user = neo4j  pass = neo4j
+      //         bolt://127.0.0.1:7687
+      final File neo4jHome = new File( _startNeo4j );
+      if ( !neo4jHome.isDirectory() ) {
+         throw new ResourceInitializationException(
+               new FileNotFoundException( "Could not find Neo4j Home directory " + _startNeo4j ) );
+      }
+      final File logFile = new File( neo4jHome, "DeepPheClient.log" );
+      final ProcessBuilder builder = new ProcessBuilder();
+      builder.directory( neo4jHome )
+             .redirectOutput( logFile)
+             .redirectError( logFile );
+      final boolean isWindows = System.getProperty( "os.name" )
+                                      .toLowerCase()
+                                      .startsWith( "windows" );
+      if ( isWindows ) {
+         builder.command( "cmd.exe", "/c", "bin/neo4j console" );
+      } else {
+         builder.command( "sh", "-c", "bin/neo4j console" );
+      }
+      try {
+         logFile.delete();
+         logFile.createNewFile();
+         builder.start();
+      } catch ( IOException ioE ) {
+         throw new ResourceInitializationException( ioE );
+      }
    }
 
 

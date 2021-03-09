@@ -3,6 +3,7 @@ package org.healthnlp.deepphe.core.json;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.ctakes.cancer.type.textspan.Episode;
 import org.apache.ctakes.core.util.ListFactory;
 import org.apache.ctakes.core.util.annotation.SemanticGroup;
 import org.apache.ctakes.core.util.doc.JCasBuilder;
@@ -17,6 +18,7 @@ import org.apache.ctakes.typesystem.type.textsem.EventMention;
 import org.apache.ctakes.typesystem.type.textsem.IdentifiedAnnotation;
 import org.apache.ctakes.typesystem.type.textspan.Segment;
 import org.apache.log4j.Logger;
+import org.apache.uima.fit.util.JCasUtil;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.cas.FSArray;
 import org.healthnlp.deepphe.core.neo4j.Neo4jOntologyConceptUtil;
@@ -51,9 +53,8 @@ final public class JsonNoteReader {
                        .setDocIdPrefix( patient.getId() )
                        .setDocText( note.getText() )
                        .rebuild( jCas );
-
+      addEpisode( jCas, note.getEpisode() );
       addSections( jCas, note.getSections() );
-
       final Map<String, IdentifiedAnnotation> idAnnotations = addMentions( jCas, note.getMentions() );
       addRelations( jCas, idAnnotations, note.getRelations() );
       addCorefs( jCas, idAnnotations, note.getCorefs() );
@@ -66,6 +67,15 @@ final public class JsonNoteReader {
          segment.setId( section.getType() );
          segment.addToIndexes();
       }
+   }
+
+   static private void addEpisode( final JCas jCas, final String episodeType ) {
+      if ( episodeType == null || episodeType.isEmpty() ) {
+         return;
+      }
+      final Episode episode = new Episode( jCas );
+      episode.setEpisodeType( episodeType );
+      episode.addToIndexes();
    }
 
 
