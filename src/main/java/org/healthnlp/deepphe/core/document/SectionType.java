@@ -17,7 +17,8 @@ public enum SectionType implements SectType {
    ClinicalInfo( "Clinical Info" ),
    CurrentTherapy( "Current Therapy" ),
    EndOfImpression( "End of Impression" ),
-   FamilyHistory( "Family History" ),
+   Examination( "Examination" ),
+   FamilyHistory( "Family Medical History" ),
    FinalDiagnosis( "Final Diagnosis" ),
    Finding( "Findings" ),
    FullText( "Full Text" ),
@@ -33,6 +34,7 @@ public enum SectionType implements SectType {
    PresentHistory( "History of Present Illness" ),
    PrincipalDiagnosis( "Principal Diagnosis" ),
    PriorTherapy( "Prior Therapy" ),
+   ReviewSystems( "Review of Systems" ),
 //   SimpleSegment( Sectionizer.SIMPLE_SEGMENT ),
    SimpleSegment( "SIMPLE_SEGMENT" ),
    OtherSection( "Other Section" );

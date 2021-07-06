@@ -89,6 +89,11 @@ final public class UriUtil {
     * @return Map of each "best" uri and the existing other uris that are its roots
     */
    static public Map<String,Collection<String>> getAssociatedUriMap( final Collection<String> uris ) {
+      if ( uris.size() == 1 ) {
+         final Map<String,Collection<String>> map = new HashMap<>( 1 );
+         uris.forEach( u -> map.put( u, new HashSet<>( uris ) ) );
+         return map;
+      }
       // Join all uris that fall within a root tree
       final Map<String,String> bestRoots = getBestRoots( uris );
       final Map<String,Collection<String>> rootChildrenMap = new HashMap<>();
@@ -114,12 +119,55 @@ final public class UriUtil {
       return bestAssociations;
    }
 
+   /**
+    *
+    * @param uris -
+    * @return Map of each "best" uri and the existing other uris that are its roots
+    */
+   static public Map<String,Collection<String>> getAllAssociatedUriMap( final Collection<String> uris ) {
+      if ( uris.size() == 1 ) {
+         final Map<String,Collection<String>> map = new HashMap<>( 1 );
+         uris.forEach( u -> map.put( u, new HashSet<>( uris ) ) );
+         return map;
+      }
+      // Join all uris that fall within a root tree
+      final Map<String,String> bestRoots = getAllBestRoots( uris );
+      final Map<String,Collection<String>> rootChildrenMap = new HashMap<>();
+      for ( Map.Entry<String,String> bestRoot : bestRoots.entrySet() ) {
+         // fill the map of each "best" root uri to a list of all leaf uris for which it is best.
+         rootChildrenMap.computeIfAbsent( bestRoot.getValue(), u -> new ArrayList<>() ).add( bestRoot.getKey() );
+      }
+
+      final Map<String,Collection<String>> bestAssociations = new HashMap<>();
+      for ( Map.Entry<String,Collection<String>> rootLeafs : rootChildrenMap.entrySet() ) {
+         final Map<String, Collection<String>> uniqueChildren = getAllUniqueChildren( rootLeafs.getValue() );
+//             * Occipital_Lobe : [Occipital_Lobe]
+//             * Parietal_Lobe : [Parietal_Lobe]
+//             * Brain : [Occipital_Lobe, Parietal_Lobe]
+//             * Nervous_System : [Occipital_Lobe, Parietal_Lobe]
+         for ( Map.Entry<String,Collection<String>> rootBest : uniqueChildren.entrySet() ) {
+            rootBest.getValue().forEach( u -> bestAssociations.computeIfAbsent( u, l -> new HashSet<>() )
+                                                              .add( rootBest.getKey() ) );
+         }
+      }
+//             * Occipital_Lobe : [Occipital_Lobe, Brain, Nervous_System]
+//             * Parietal_Lobe : [Parietal_Lobe, Brain, Nervous_System]
+      return bestAssociations;
+   }
+
 
    static public Map<String,String> getBestRoots( final Collection<String> uris ) {
       final Map<String, Collection<String>> uriBranches
             = uris.stream()
                   .collect( Collectors.toMap( Function.identity(), Neo4jOntologyConceptUtil::getBranchUris ) );
       return getBestRoots( uriBranches );
+   }
+
+   static public Map<String,String> getAllBestRoots( final Collection<String> uris ) {
+      final Map<String, Collection<String>> uriBranches
+            = uris.stream()
+                  .collect( Collectors.toMap( Function.identity(), Neo4jOntologyConceptUtil::getBranchUris ) );
+      return getAllBestRoots( uriBranches );
    }
 
 
@@ -180,6 +228,49 @@ final public class UriUtil {
       return uriBestRootMap;
    }
 
+   static private Map<String,String> getAllBestRoots( final Map<String, Collection<String>> uriBranches ) {
+      final List<String> uris = new ArrayList<>( uriBranches.keySet() );
+      // Create map seeded with each uri as best of itself
+      final Map<String, String> uriBestRootMap
+            = uriBranches.keySet().stream()
+                         .collect( Collectors.toMap( Function.identity(), Function.identity() ) );
+      for ( int i=0; i<uris.size()-1; i++ ) {
+         final String iUri = uris.get( i );
+         // A better iUri may have already been set when it was a j
+         String bestIuri = uriBestRootMap.get( iUri );
+         Collection<String> iBranch = uriBranches.get( bestIuri );
+         for ( int j = i + 1; j < uris.size(); j++ ) {
+            final String jUri = uris.get( j );
+            // A better jUri may have already been set when previously compared to an i
+            final String bestJuri = uriBestRootMap.get( jUri );
+            Collection<String> jBranch = uriBranches.get( bestJuri );
+            if ( jBranch.size() > iBranch.size() && jBranch.contains( bestIuri ) ) {
+               replaceWithBest( bestIuri, bestJuri, uris, 0, i, uriBestRootMap );
+               bestIuri = bestJuri;
+               iBranch = jBranch;
+            } else if ( iBranch.size() > jBranch.size() && iBranch.contains( bestJuri ) ) {
+               replaceWithBest( bestJuri, bestIuri, uris, j, uris.size(), uriBestRootMap );
+            } else {
+               final String closeEnoughUri = getCloseUriRoot( bestIuri, bestJuri );
+               if ( closeEnoughUri != null ) {
+                  if ( bestJuri.equals( closeEnoughUri ) ) {
+                     replaceWithBest( bestIuri, bestJuri, uris, 0, i, uriBestRootMap );
+                     bestIuri = bestJuri;
+                     iBranch = jBranch;
+                  } else {
+                     replaceWithBest( bestJuri, bestIuri, uris, j, uris.size(), uriBestRootMap );
+                  }
+               }
+            }
+         }
+      }
+//      LOGGER.info( "All Best root for each uri: " );
+//      uriBestRootMap.forEach( (k,v) -> LOGGER.info( k + " : " + v ) );
+
+      return uriBestRootMap;
+   }
+
+
    static private void replaceWithBest( final String previousBest,
                                         final String newBest,
                                         final List<String> uris,
@@ -239,6 +330,37 @@ final public class UriUtil {
       modifierUris.forEach( u -> uniqueChildren.computeIfAbsent( u, Collections::singletonList ) );
       return uniqueChildren;
    }
+
+   /**
+    *
+    * @param uris -
+    * @return Map of each uri and the best existing parent leafs in its ancestry.
+    * Occipital_Lobe : [Occipital_Lobe]
+    * Parietal_Lobe : [Parietal_Lobe]
+    * Brain : [Occipital_Lobe, Parietal_Lobe] --> Brain has 2 equal children that cannot subsume each other
+    * Nervous_System : [Occipital_Lobe, Parietal_Lobe]
+    */
+   static public Map<String,Collection<String>> getAllUniqueChildren( final Collection<String> uris ) {
+      if ( uris.size() == 1 ) {
+         final String uri = new ArrayList<>( uris ).get( 0 );
+         final Map<String,Collection<String>> singleMap = new HashMap<>( 1 );
+         singleMap.put( uri, Collections.singletonList( uri ) );
+         return singleMap;
+      }
+      final Map<String, Collection<String>> uriRoots
+            = uris.stream()
+                  .collect( Collectors.toMap( Function.identity(), Neo4jOntologyConceptUtil::getRootUris ) );
+      return getAllUniqueChildren( uriRoots );
+   }
+
+
+   // TODO  This might be better done by collecting uris that subsume other uris, then doing the replacement
+   static private Map<String,Collection<String>> getAllUniqueChildren( final Map<String, Collection<String>> uriRoots ) {
+      final List<String> uris = new ArrayList<>( uriRoots.keySet() );
+      // Create map seeded with each uri as best of itself
+      return getUniqueChildren( uris, uriRoots );
+   }
+
 
    // TODO  This might be better done by collecting uris that subsume other uris, then doing the replacement
    static private Map<String,Collection<String>> getUniqueChildren( final List<String> uris, final Map<String, Collection<String>> uriRoots ) {
