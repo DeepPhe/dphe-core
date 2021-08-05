@@ -11,6 +11,7 @@ import org.apache.uima.resource.ResourceInitializationException;
 import org.healthnlp.deepphe.neo4j.driver.DriverConnection;
 
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author SPF , chip-nlp
@@ -118,7 +119,7 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
                                       .toLowerCase()
                                       .startsWith( "windows" );
       if ( isWindows ) {
-         builder.command( "cmd.exe", "/c", "bin/neo4j console" );
+         builder.command( "cmd.exe", "/c", "bin\\neo4j console" );
       } else {
          builder.command( "sh", "-c", "bin/neo4j console" );
       }
@@ -126,6 +127,13 @@ final public class Neo4jServerConnectAe extends JCasAnnotator_ImplBase {
          logFile.delete();
          logFile.createNewFile();
          builder.start();
+         // Sleep for 30 seconds to allow the neo4j service to become available
+         LOGGER.info( "Waiting 30 seconds for Neo4j service at " + _startNeo4j + " to initialize ..." );
+         try {
+            TimeUnit.SECONDS.sleep( 30 );
+         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+         }
       } catch ( IOException ioE ) {
          throw new ResourceInitializationException( ioE );
       }

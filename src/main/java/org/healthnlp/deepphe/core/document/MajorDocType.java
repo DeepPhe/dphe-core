@@ -20,7 +20,7 @@ public enum MajorDocType implements DocType {
          HistologySummary, Impression, Microscopic, PreOpDiagnosis, PostOpDiagnosis ),
    CLINICAL( BasicInformation, ChiefComplaint, FinalDiagnosis, Finding, HistoryPresentIllness, Impression, Pathology,
          PrincipalDiagnosis,
-         PreOpDiagnosis, PresentHistory, PostOpDiagnosis, PriorTherapy, CurrentTherapy ),
+         PreOpDiagnosis, HistoryPresentIllness, PostOpDiagnosis, PriorTherapy, CurrentTherapy ),
    UNKNOWN();
 
    private final Collection<SectionType> _validSections;

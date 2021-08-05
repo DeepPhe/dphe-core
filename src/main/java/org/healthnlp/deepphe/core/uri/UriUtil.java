@@ -4,7 +4,6 @@ import org.apache.log4j.Logger;
 import org.healthnlp.deepphe.core.neo4j.Neo4jOntologyConceptUtil;
 import org.healthnlp.deepphe.neo4j.constant.UriConstants;
 
-//import javax.annotation.concurrent.Immutable;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -135,7 +134,8 @@ final public class UriUtil {
       final Map<String,Collection<String>> rootChildrenMap = new HashMap<>();
       for ( Map.Entry<String,String> bestRoot : bestRoots.entrySet() ) {
          // fill the map of each "best" root uri to a list of all leaf uris for which it is best.
-         rootChildrenMap.computeIfAbsent( bestRoot.getValue(), u -> new ArrayList<>() ).add( bestRoot.getKey() );
+         rootChildrenMap.computeIfAbsent( bestRoot.getValue(), u -> new HashSet<>() )
+                        .add( bestRoot.getKey() );
       }
 
       final Map<String,Collection<String>> bestAssociations = new HashMap<>();
@@ -167,7 +167,11 @@ final public class UriUtil {
       final Map<String, Collection<String>> uriBranches
             = uris.stream()
                   .collect( Collectors.toMap( Function.identity(), Neo4jOntologyConceptUtil::getBranchUris ) );
-      return getAllBestRoots( uriBranches );
+      final Map<String,Integer> uriLevelMap = uris.stream()
+                                                  .collect(
+                                                        Collectors.toMap( Function.identity(),
+                                                                          Neo4jOntologyConceptUtil::getClassLevel ) );
+      return getAllBestRoots( uriBranches, uriLevelMap );
    }
 
 
@@ -176,8 +180,7 @@ final public class UriUtil {
       // We don't want to mess up modifiers with things like "Left" -> "Left_Arm"
       // TODO : BODY_MODIFIER does not exist
 //      final Collection<String> modifiers = new ArrayList<>( Neo4jOntologyConceptUtil.getBranchUris( BODY_MODIFIER ) );
-      final Collection<String> modifiers = new HashSet<>();
-      modifiers.addAll( Neo4jOntologyConceptUtil.getBranchUris( LATERALITY ) );
+      final Collection<String> modifiers = new HashSet<>( Neo4jOntologyConceptUtil.getBranchUris( LATERALITY ) );
       modifiers.add( MASS );
       modifiers.add( DISEASE );
       modifiers.add( NEOPLASM );
@@ -185,6 +188,7 @@ final public class UriUtil {
       modifiers.add( MALIGNANT_NEOPLASM );
       final List<String> modifierUris = uris.stream().filter( modifiers::contains ).collect( Collectors.toList() );
       uris.removeAll( modifierUris );
+      uris.sort( String.CASE_INSENSITIVE_ORDER );
       // Create map seeded with each uri as best of itself
       final Map<String, String> uriBestRootMap
             = uriBranches.keySet().stream()
@@ -228,48 +232,144 @@ final public class UriUtil {
       return uriBestRootMap;
    }
 
-   static private Map<String,String> getAllBestRoots( final Map<String, Collection<String>> uriBranches ) {
-      final List<String> uris = new ArrayList<>( uriBranches.keySet() );
+
+   static private final class UriBestRootStore {
+      private final String _uri;
+      private final Collection<String> _uriBranch;
+      private final int _uriLevel;
+      private String _bestRoot;
+      private Collection<String> _bestRootBranch;
+      private int _bestRootLevel;
+      private UriBestRootStore( final String uri,
+                                final Map<String, Collection<String>> uriBranches,
+                                final Map<String,Integer> uriLevels ) {
+         _uri = uri;
+         _uriBranch = uriBranches.get( uri );
+         _uriLevel = uriLevels.get( uri );
+         _bestRoot = uri;
+         _bestRootBranch = _uriBranch;
+         _bestRootLevel = _uriLevel;
+      }
+      String getUri() {
+         return _uri;
+      }
+      String getBestRoot() {
+         return _bestRoot;
+      }
+      private void checkAsBestRoot( final UriBestRootStore otherBest ) {
+//         LOGGER.info( "Checking " + toString() + "\nvs. " + otherBest.toString() );
+         if ( _uri.equals( otherBest._uri )
+              || _bestRoot.equals( otherBest._uri )
+              || !otherBest._uriBranch.contains( _uri ) ) {
+            // Equal, already the root, or not a possible root.
+            return;
+         }
+         if ( otherBest._uriBranch.contains( _bestRoot ) ) {
+            // The other branch contains this current best root.
+            setBest( otherBest );
+         } else if ( otherBest._uriLevel < _bestRootLevel ) {
+            // The other is higher in the overall ontology hierarchy.
+            setBest( otherBest );
+         } else if (otherBest._uriBranch.size() > _bestRootBranch.size() ) {
+            // The other has a bigger branch.
+            setBest( otherBest );
+         }
+
+      }
+      private void setBest( final UriBestRootStore otherBest ) {
+//         LOGGER.info( "Setting Best " + otherBest );
+         _bestRoot = otherBest._uri;
+         _bestRootBranch = otherBest._uriBranch;
+         _bestRootLevel = otherBest._uriLevel;
+      }
+      public String toString() {
+         return "URI  " + _uri + " " + _uriLevel + " : "
+//                + _uriBranch.stream().sorted().collect( Collectors.joining( " " ) ) + "\n"
+                + "BEST " + _bestRoot + " " + _bestRootLevel + " : ";
+//                + _bestRootBranch.stream().sorted().collect( Collectors.joining( " " ) );
+      }
+   }
+
+   static private Map<String,String> getAllBestRoots( final Map<String, Collection<String>> uriBranches,
+                                                      final Map<String,Integer> uriLevels ) {
       // Create map seeded with each uri as best of itself
-      final Map<String, String> uriBestRootMap
-            = uriBranches.keySet().stream()
-                         .collect( Collectors.toMap( Function.identity(), Function.identity() ) );
-      for ( int i=0; i<uris.size()-1; i++ ) {
-         final String iUri = uris.get( i );
+      final List<UriBestRootStore> uriBestRootStores
+            = uriBranches.keySet()
+                        .stream()
+                        .map( u -> new UriBestRootStore( u, uriBranches,  uriLevels ) )
+                         .sorted( Comparator.comparing( UriBestRootStore::getUri ) )
+                         .collect( Collectors.toList() );
+      for ( int i=0; i<uriBestRootStores.size()-1; i++ ) {
          // A better iUri may have already been set when it was a j
-         String bestIuri = uriBestRootMap.get( iUri );
-         Collection<String> iBranch = uriBranches.get( bestIuri );
-         for ( int j = i + 1; j < uris.size(); j++ ) {
-            final String jUri = uris.get( j );
-            // A better jUri may have already been set when previously compared to an i
-            final String bestJuri = uriBestRootMap.get( jUri );
-            Collection<String> jBranch = uriBranches.get( bestJuri );
-            if ( jBranch.size() > iBranch.size() && jBranch.contains( bestIuri ) ) {
-               replaceWithBest( bestIuri, bestJuri, uris, 0, i, uriBestRootMap );
-               bestIuri = bestJuri;
-               iBranch = jBranch;
-            } else if ( iBranch.size() > jBranch.size() && iBranch.contains( bestJuri ) ) {
-               replaceWithBest( bestJuri, bestIuri, uris, j, uris.size(), uriBestRootMap );
-            } else {
-               final String closeEnoughUri = getCloseUriRoot( bestIuri, bestJuri );
-               if ( closeEnoughUri != null ) {
-                  if ( bestJuri.equals( closeEnoughUri ) ) {
-                     replaceWithBest( bestIuri, bestJuri, uris, 0, i, uriBestRootMap );
-                     bestIuri = bestJuri;
-                     iBranch = jBranch;
-                  } else {
-                     replaceWithBest( bestJuri, bestIuri, uris, j, uris.size(), uriBestRootMap );
-                  }
-               }
-            }
+         final UriBestRootStore iBest = uriBestRootStores.get( i );
+         for ( int j = i + 1; j < uriBestRootStores.size(); j++ ) {
+            // A better jUri may have already been set when previously compared to an i.  Otherwise it is jUri.
+            final UriBestRootStore jBest = uriBestRootStores.get( j );
+            iBest.checkAsBestRoot( jBest );
+            jBest.checkAsBestRoot( iBest );
          }
       }
 //      LOGGER.info( "All Best root for each uri: " );
-//      uriBestRootMap.forEach( (k,v) -> LOGGER.info( k + " : " + v ) );
-
-      return uriBestRootMap;
+//      uriBestRootStores.forEach( LOGGER::info );
+      return uriBestRootStores.stream()
+                              .collect( Collectors.toMap( UriBestRootStore::getUri,
+                                                          UriBestRootStore::getBestRoot ) );
    }
 
+//   static private String getBestRoot( final String currentBest, final String candidateBest,
+//                                     final Map<String,Collection<String>> uriBranches,
+//                                     final Map<String,Integer> uriLevels ) {
+//      final Collection<String> currentBestBranch = uriBranches.get( currentBest );
+//      final Collection<String> candidateBestBranch = uriBranches.get( candidateBest );
+//      if ( currentBestBranch.size() == candidateBestBranch.size() ) {
+//         // any best root's branch must contain the other uri and its branch, so it must be larger.
+//         return "";
+//      }
+//      // See if one is the root of the other.
+//      final boolean currentInCandidate = candidateBestBranch.contains( currentBest );
+//      final boolean candidateInCurrent = currentBestBranch.contains( candidateBest );
+//      if ( currentInCandidate && !candidateInCurrent ) {
+//         return candidateBest;
+//      } else if ( !currentInCandidate && candidateInCurrent ) {
+//         return currentBest;
+//      }
+//      // Both are roots of uri, and within each other's branch.  Use the root with a higher level.
+//      final int currentLevel = uriLevels.get( currentBest );
+//      final int candidateLevel = uriLevels.get( candidateBest );
+//      if ( currentLevel < candidateLevel ) {
+//         return currentBest;
+//      } else if ( currentLevel > candidateLevel ) {
+//         return candidateBest;
+//      }
+//      // As a last resort, use URI length;
+//      return currentBest.length() < candidateBest.length() ? currentBest : candidateBest;
+//   }
+//
+//   static private void setBestRoots( final String bestRoot,
+//                                     final String toReplace,
+//                                     final Map<String,String> uriBestRoots ) {
+//      final Collection<String> toReplaceSet = new HashSet<>();
+//      for ( Map.Entry<String,String> uriBestRoot : uriBestRoots.entrySet() ) {
+//         if ( uriBestRoot.getValue().equals( toReplace ) ) {
+//            toReplaceSet.add( uriBestRoot.getKey() );
+//         }
+//      }
+//      toReplaceSet.forEach( u -> LOGGER.info( "Replacing " + u + " with " + bestRoot ) );
+//      toReplaceSet.forEach( u -> uriBestRoots.put( u, bestRoot ) );
+//   }
+//
+//   static private void setBestRoots( final String bestRoot,
+//                                     final String toReplace1,
+//                                     final String toReplace2,
+//                                     final Map<String,String> uriBestRoots ) {
+//      final Collection<String> toReplace = new HashSet<>();
+//      for ( Map.Entry<String,String> uriBestRoot : uriBestRoots.entrySet() ) {
+//         if ( uriBestRoot.getValue().equals( toReplace1 ) || uriBestRoot.getValue().equals( toReplace2 ) ) {
+//            toReplace.add( uriBestRoot.getKey() );
+//         }
+//      }
+//      toReplace.forEach( u -> uriBestRoots.put( u, bestRoot ) );
+//   }
 
    static private void replaceWithBest( final String previousBest,
                                         final String newBest,
@@ -357,6 +457,7 @@ final public class UriUtil {
    // TODO  This might be better done by collecting uris that subsume other uris, then doing the replacement
    static private Map<String,Collection<String>> getAllUniqueChildren( final Map<String, Collection<String>> uriRoots ) {
       final List<String> uris = new ArrayList<>( uriRoots.keySet() );
+      uris.sort( String.CASE_INSENSITIVE_ORDER );
       // Create map seeded with each uri as best of itself
       return getUniqueChildren( uris, uriRoots );
    }
@@ -567,41 +668,41 @@ final public class UriUtil {
       // Synonyms hard coded for now until get more generalized solution using
       // ontology walking that will deal with these cases
       // Some are not synonyms, but "part_of" anatomicals that aren't handled well in the ontology.
-      final String axilArea = "our Axillary_Lymph_Node Axilla area";
+      final String axilArea = "our Axillary_Lymph_Node area";
       final String breastArea = "our Breast area";
-      final String CHEST_AREA = "our Chest area";
-      final String UTERINE_AREA = "our Uterine area";
+//      final String CHEST_AREA = "our Chest area";
+//      final String UTERINE_AREA = "our Uterine area";
       final String OVARY_AREA = "our Ovary area";
-      final String ABDOMEN_AREA = "our Abdomen area";
-      final String COLON_AREA = "Our Colon area";
-      final String LEG_AREA = "Our Leg area";
+//      final String ABDOMEN_AREA = "our Abdomen area";
+//      final String COLON_AREA = "Our Colon area";
+//      final String LEG_AREA = "Our Leg area";
       final String ENDO_ADENO = "Our Endometrial Adenocarcinoma";
       HARDCODED_CLOSE_ENOUGH.put( "Axilla", axilArea );
       HARDCODED_CLOSE_ENOUGH.put( "Axillary_Lymph_Node", axilArea );
       HARDCODED_CLOSE_ENOUGH.put( "Lymphatic_Vessel", axilArea );
       HARDCODED_CLOSE_ENOUGH.put( "Breast", breastArea );
-      HARDCODED_CLOSE_ENOUGH.put( "Left_Breast", breastArea );
-      HARDCODED_CLOSE_ENOUGH.put( "Right_Breast", breastArea );
-      HARDCODED_CLOSE_ENOUGH.put( "Nipple", breastArea );
-      HARDCODED_CLOSE_ENOUGH.put( "Mammary_Gland_Tissue", breastArea );
+//      HARDCODED_CLOSE_ENOUGH.put( "Left_Breast", breastArea );
+//      HARDCODED_CLOSE_ENOUGH.put( "Right_Breast", breastArea );
+//      HARDCODED_CLOSE_ENOUGH.put( "Nipple", breastArea );  Nipple now under Breast
+//      HARDCODED_CLOSE_ENOUGH.put( "Mammary_Gland_Tissue", breastArea );  Removed
       HARDCODED_CLOSE_ENOUGH.put( "Duct", breastArea );   // TODO consider doing this one only for BrCa
-      HARDCODED_CLOSE_ENOUGH.put( "Lung", CHEST_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Chest", CHEST_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Uterus", UTERINE_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Cervix_Uteri", UTERINE_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Endocervix", UTERINE_AREA );
+//      HARDCODED_CLOSE_ENOUGH.put( "Lung", CHEST_AREA );   Lung now under Thorax
+//      HARDCODED_CLOSE_ENOUGH.put( "Chest", CHEST_AREA );  "Chest" is now "Thorax"
+//      HARDCODED_CLOSE_ENOUGH.put( "Uterus", UTERINE_AREA );
+//      HARDCODED_CLOSE_ENOUGH.put( "Cervix_Uteri", UTERINE_AREA );  Under Uterus
+//      HARDCODED_CLOSE_ENOUGH.put( "Endocervix", UTERINE_AREA );  Under Uterus
       HARDCODED_CLOSE_ENOUGH.put( "Ovary", OVARY_AREA );
       HARDCODED_CLOSE_ENOUGH.put( "Fallopian_Tube", OVARY_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Abdomen", ABDOMEN_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Mesentery", ABDOMEN_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Omentum", ABDOMEN_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Peritoneal_Cavity", ABDOMEN_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Abdominal_Wall", ABDOMEN_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Inguinal_Region", ABDOMEN_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Large_Intestine", COLON_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Colon", COLON_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Leg", LEG_AREA );
-      HARDCODED_CLOSE_ENOUGH.put( "Thigh", LEG_AREA );
+//      HARDCODED_CLOSE_ENOUGH.put( "Abdomen", ABDOMEN_AREA );
+//      HARDCODED_CLOSE_ENOUGH.put( "Mesentery", ABDOMEN_AREA );   now under abdomen
+//      HARDCODED_CLOSE_ENOUGH.put( "Omentum", ABDOMEN_AREA );    now under abdomen
+//      HARDCODED_CLOSE_ENOUGH.put( "Peritoneal_Cavity", ABDOMEN_AREA );   now under abdomen
+//      HARDCODED_CLOSE_ENOUGH.put( "Abdominal_Wall", ABDOMEN_AREA );   now under abdomen
+//      HARDCODED_CLOSE_ENOUGH.put( "Inguinal_Region", ABDOMEN_AREA );  now under abdomen
+//      HARDCODED_CLOSE_ENOUGH.put( "Large_Intestine", COLON_AREA );
+//      HARDCODED_CLOSE_ENOUGH.put( "Colon", COLON_AREA );  Colon now under lg intestine.
+//      HARDCODED_CLOSE_ENOUGH.put( "Leg", LEG_AREA );
+//      HARDCODED_CLOSE_ENOUGH.put( "Thigh", LEG_AREA );  Thigh now under leg
 
       HARDCODED_CLOSE_ENOUGH.put( "Endometrial_Adenocarcinoma", ENDO_ADENO );
       HARDCODED_CLOSE_ENOUGH.put( "Endometrioid_Adenocarcinoma", ENDO_ADENO );
