@@ -161,6 +161,7 @@
    </repositories>
 
    <build>
+      <finalName>deepphe-core</finalName>
       <!-- It's good practice to explicitly declare versions for all plugins -->
          <plugins>
 
