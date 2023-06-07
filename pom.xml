@@ -3,25 +3,26 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>org.healthnlp</groupId>
-    <artifactId>deepphe-core</artifactId>
-    <version>0.6.0</version>
-    <name>deepphe-core</name>
-    <description>Cancer Deep Phenotype Extraction (DeepPhe) Core module</description>
-    <packaging>jar</packaging>
-    <properties>
-        <ctakes.version>4.0.1-SNAPSHOT</ctakes.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-    <dependencies>
-        <dependency>
-            <groupId>org.healthnlp</groupId>
-            <artifactId>deepphe-neo4j</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>org.healthnlp</groupId>
+   <artifactId>deepphe-core</artifactId>
+   <version>0.6.0</version>
+   <name>deepphe-core</name>
+   <description>Cancer Deep Phenotype Extraction (DeepPhe) Core module</description>
+   <packaging>jar</packaging>
+   <properties>
+      <deepphe.version>latest</deepphe.version>
+      <ctakes.version>4.0.1-SNAPSHOT</ctakes.version>
+      <maven.compiler.source>1.8</maven.compiler.source>
+      <maven.compiler.target>1.8</maven.compiler.target>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+   </properties>
+   <dependencies>
+      <dependency>
+         <groupId>org.healthnlp</groupId>
+         <artifactId>deepphe-neo4j</artifactId>
+         <version>${deepphe.version}</version>
+      </dependency>
 
         <dependency>
             <groupId>org.apache.ctakes</groupId>
@@ -155,29 +156,10 @@
 
     </dependencies>
 
-
-    <repositories>
-        <repository>
-            <id>apache.snapshots</id>
-            <name>Apache Development Snapshot Repository</name>
-            <url>https://repository.apache.org/content/groups/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <!--      <repository>-->
-        <!--          <id>github</id>-->
-        <!--          <name>Github Packages</name>-->
-        <!--          <url>https://maven.pkg.github.com/DeepPhe/dphe-neo4j</url>-->
-        <!--      </repository>-->
-    </repositories>
-
-    <build>
-        <!-- It's good practice to explicitly declare versions for all plugins -->
-        <plugins>
+   <build>
+      <finalName>deepphe-core</finalName>
+      <!-- It's good practice to explicitly declare versions for all plugins -->
+         <plugins>
 
             <plugin>
                 <groupId>org.apache.uima</groupId>
@@ -199,13 +181,45 @@
                 </executions>
             </plugin>
 
-        </plugins>
-    </build>
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>DeepPhe-Robot</name>
-            <url>https://maven.pkg.github.com/DeepPhe/dphe-core</url>
-        </repository>
-    </distributionManagement>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-install-plugin</artifactId>
+               <version>2.4</version>
+               <executions>
+<!--                  <execution>-->
+<!--                     <id>default-install</id>-->
+<!--                     <goals>-->
+<!--                        <goal>install</goal>-->
+<!--                     </goals>-->
+<!--                     <phase>install</phase>-->
+<!--                     <configuration>-->
+<!--                        <skip>true</skip>-->
+<!--                      </configuration>-->
+<!--                  </execution>-->
+
+                  <execution>
+                     <id>latest-install</id>
+                     <goals>
+                        <goal>install-file</goal>
+                     </goals>
+                     <phase>install</phase>
+                     <configuration>
+                        <file>${project.build.directory}/${project.build.finalName}.jar</file>
+                        <generatePom>false</generatePom>
+                        <pomFile>pom.xml</pomFile>
+                        <version>${deepphe.version}</version>
+                     </configuration>
+                  </execution>
+               </executions>
+            </plugin>
+
+         </plugins>
+   </build>
+   <distributionManagement>
+      <repository>
+         <id>github</id>
+         <name>DeepPhe-Robot</name>
+         <url>https://maven.pkg.github.com/DeepPhe/dphe-core</url>
+      </repository>
+   </distributionManagement>
 </project>
