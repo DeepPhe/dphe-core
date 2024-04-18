@@ -224,27 +224,24 @@ final public class JsonNoteWriter {
    static private Mention createMention( final IdentifiedAnnotation annotation ) {
       final Mention mention = new Mention();
       mention.setClassUri( Neo4jOntologyConceptUtil.getUri( annotation ) );
-      mention.setBegin( annotation.getBegin() );
-      mention.setEnd( annotation.getEnd() );
+      mention.setSpan( annotation.getBegin(), annotation.getEnd() );
       mention.setNegated( IdentifiedAnnotationUtil.isNegated( annotation ) );
       mention.setUncertain( IdentifiedAnnotationUtil.isUncertain( annotation ) );
-      mention.setGeneric( IdentifiedAnnotationUtil.isGeneric( annotation ) );
-      mention.setConditional( IdentifiedAnnotationUtil.isConditional( annotation ) );
       mention.setHistoric( IdentifiedAnnotationUtil.isHistoric( annotation ) );
-      String temporality = "";
-      if ( annotation instanceof EventMention ) {
-         final Event event = ((EventMention)annotation).getEvent();
-         if ( event != null ) {
-            final EventProperties eventProperties = event.getProperties();
-            if ( eventProperties != null ) {
-               final String dtr = eventProperties.getDocTimeRel();
-               if ( dtr != null && !dtr.isEmpty() ) {
-                  temporality = dtr;
-               }
-            }
-         }
-      }
-      mention.setTemporality( temporality );
+//      String temporality = "";
+//      if ( annotation instanceof EventMention ) {
+//         final Event event = ((EventMention)annotation).getEvent();
+//         if ( event != null ) {
+//            final EventProperties eventProperties = event.getProperties();
+//            if ( eventProperties != null ) {
+//               final String dtr = eventProperties.getDocTimeRel();
+//               if ( dtr != null && !dtr.isEmpty() ) {
+//                  temporality = dtr;
+//               }
+//            }
+//         }
+//      }
+//      mention.setTemporality( temporality );
       return mention;
    }
 

@@ -92,16 +92,14 @@ final public class JsonNoteReader {
                mention.isNegated() ? CONST.NE_POLARITY_NEGATION_PRESENT : CONST.NE_POLARITY_NEGATION_ABSENT );
          annotation.setUncertainty(
                mention.isUncertain() ? CONST.NE_UNCERTAINTY_PRESENT : CONST.NE_UNCERTAINTY_ABSENT );
-         annotation.setGeneric( mention.isGeneric() );
-         annotation.setConditional( mention.isConditional() );
          annotation.setHistoryOf( mention.isHistoric() ? CONST.NE_HISTORY_OF_PRESENT : CONST.NE_HISTORY_OF_ABSENT );
-         if ( annotation instanceof EventMention ) {
-            final EventProperties properties = new EventProperties( jCas );
-            properties.setDocTimeRel( mention.getTemporality() );
-            final Event event = new Event( jCas );
-            event.setProperties( properties );
-            ((EventMention)annotation).setEvent( event );
-         }
+//         if ( annotation instanceof EventMention ) {
+//            final EventProperties properties = new EventProperties( jCas );
+//            properties.setDocTimeRel( mention.getTemporality() );
+//            final Event event = new Event( jCas );
+//            event.setProperties( properties );
+//            ((EventMention)annotation).setEvent( event );
+//         }
          annotation.setDiscoveryTechnique( CONST.NE_DISCOVERY_TECH_EXPLICIT_AE );
          final FSArray conceptArr = new FSArray( jCas, 1 );
          conceptArr.set( 0, createUmlsConcept( jCas, uri ) );
