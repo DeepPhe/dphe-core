@@ -11,7 +11,7 @@
    <packaging>jar</packaging>
    <properties>
       <deepphe.version>latest</deepphe.version>
-      <ctakes.version>4.0.1-SNAPSHOT</ctakes.version>
+      <ctakes.version>5.1.0</ctakes.version>
       <maven.compiler.source>1.8</maven.compiler.source>
       <maven.compiler.target>1.8</maven.compiler.target>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -52,10 +52,6 @@
             <version>${ctakes.version}</version>
          <exclusions>
             <exclusion>
-               <groupId>org.apache.ctakes</groupId>
-               <artifactId>ctakes-core-res</artifactId>
-            </exclusion>
-            <exclusion>
                <groupId>xerces</groupId>
                <artifactId>xercesImpl</artifactId>
             </exclusion>
@@ -67,14 +63,14 @@
                <groupId>jdom</groupId>
                <artifactId>jdom2</artifactId>
             </exclusion>
-            <exclusion>
-               <groupId>org.cleartk</groupId>
-               <artifactId>cleartk-util</artifactId>
-            </exclusion>
-            <exclusion>
-               <groupId>com.google.guava</groupId>
-               <artifactId>guava</artifactId>
-            </exclusion>
+<!--            <exclusion>-->
+<!--               <groupId>org.cleartk</groupId>-->
+<!--               <artifactId>cleartk-util</artifactId>-->
+<!--            </exclusion>-->
+<!--            <exclusion>-->
+<!--               <groupId>com.google.guava</groupId>-->
+<!--               <artifactId>guava</artifactId>-->
+<!--            </exclusion>-->
             <exclusion>
                <groupId>org.apache.opennlp</groupId>
                <artifactId>opennlp-tools</artifactId>
@@ -99,10 +95,10 @@
                <groupId>com.lexicalscope.jewelcli</groupId>
                <artifactId>jewelcli</artifactId>
             </exclusion>
-            <exclusion>
-               <groupId>org.cleartk</groupId>
-               <artifactId>cleartk-ml</artifactId>
-            </exclusion>
+<!--            <exclusion>-->
+<!--               <groupId>org.cleartk</groupId>-->
+<!--               <artifactId>cleartk-ml</artifactId>-->
+<!--            </exclusion>-->
          </exclusions>
       </dependency>
 <!--         <dependency>-->
